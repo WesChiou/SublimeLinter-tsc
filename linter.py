@@ -1,5 +1,6 @@
 from SublimeLinter.lint import NodeLinter
 
+
 class Tsc(NodeLinter):
     name = 'tsc-lint'
     """
@@ -7,8 +8,9 @@ class Tsc(NodeLinter):
     https://www.typescriptlang.org/docs/handbook/compiler-options.html
 
     --noEmit option: Disable emitting files from a compilation.
+    --skipLibCheck option: Disable check *.d.ts files.
     """
-    cmd = 'tsc --noEmit --pretty true ${file}'
+    cmd = 'tsc --noEmit --pretty true --skipLibCheck true ${file}'
 
     """
     The output of tsc like this:
@@ -24,31 +26,36 @@ class Tsc(NodeLinter):
 
     def split_match(self, match):
         """
-        Filter extraneous files
-        tsc output all errors that from other dependent files
+        Filter extraneous files.
+        tsc output all errors that from other dependent files.
 
         See https://github.com/SublimeLinter/SublimeLinter/issues/1238
         """
-        print("*****************************************************")
-        print(match.group('filepath')) # index.ts
-        print(self.context.get('file')) # index.ts
-        print(self.view.file_name()) # C:\Users\wes\Downloads\ts-project\index.ts
-        print("*****************************************************")
-        return super().split_match(match)
+        tmp = super().split_match(match)
+
+        filename = match.group('filepath').replace('/', '\\')
+        fullpath = self.view.file_name()
+
+        if fullpath and filename and fullpath.endswith(filename):
+            return tmp
+
+        return None
 
 
-class VueTsc(NodeLinter):
-    name = 'vue-tsc-lint'
-    """
-    Use vue-tsc compiler to build .vue files.
-    https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc
+# class VueTsc(NodeLinter):
+#     name = 'vue-tsc-lint'
+#     """
+#     Use vue-tsc compiler to build .vue files.
+#     https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc
+#         if fullpath and filename and fullpath.endswith(filename):
+#             return tmp
 
-    NOT SUPPORT vue 2.x
-    vue-tsc only supports vue 3.x, does not support vue 2.x
-    https://github.com/vuejs/vue-cli/issues/5192
-    """
-    cmd = 'vue-tsc --noEmit --pretty true ${file}'
-    regex = (r'^(?P<filepath>(.*)):(?P<line>\d+):(?P<col>\d+)\s-\s(?P<error>error(.*)):\s(?P<message>(.*$))')
-    defaults = {
-        'selector': 'text.html.vue, source.ts.embedded.html'
-    }
+#     NOT SUPPORT vue 2.x
+#     vue-tsc only supports vue 3.x, does not support vue 2.x
+#     https://github.com/vuejs/vue-cli/issues/5192
+#     """
+#     cmd = 'vue-tsc --noEmit --pretty true --skipLibCheck true ${file}'
+#     regex = (r'^(?P<filepath>(.*)):(?P<line>\d+):(?P<col>\d+)\s-\s(?P<error>error(.*)):\s(?P<message>(.*$))')
+#     defaults = {
+#         'selector': 'text.html.vue, source.ts.embedded.html'
+#     }
